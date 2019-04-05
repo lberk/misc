@@ -16,9 +16,9 @@ else
 fi
 
 strimzi_version=`curl https://github.com/strimzi/strimzi-kafka-operator/releases/latest |  awk -F 'tag/' '{print $2}' | awk -F '"' '{print $1}' 2>/dev/null`
-serving_version="v0.5.0"
-eventing_version="v0.5.0"
-eventing_sources_version="v0.5.0"
+serving_version="0.4.1"
+eventing_version="0.4.1"
+eventing_sources_version="0.4.1"
 istio_version="v0.4.0"
 
 function header_text {
@@ -32,7 +32,7 @@ header_text "Using Knative Eventing Version:         ${eventing_version}"
 header_text "Using Knative Eventing Sources Version: ${eventing_sources_version}"
 header_text "Using Istio Version:                    ${istio_version}"
 
-minikube start --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
+minikube start --memory=12288 --cpus=4 --kubernetes-version=v1.12.1 --vm-driver=kvm2 --disk-size=30g --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
 
 header_text "Strimzi install"
 kubectl create namespace kafka
@@ -59,7 +59,7 @@ header_text "Waiting for istio to become ready"
 sleep 5; while echo && kubectl get pods -n istio-system | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
 
 header_text "Setting up Knative Serving"
-curl -L "https://github.com/knative/serving/releases/download/${serving_version}/serving.yaml" \
+curl -L "https://raw.githubusercontent.com/openshift-knative/knative-serving-operator/master/deploy/resources/knative-serving-${serving_version}.yaml" \
   | sed 's/LoadBalancer/NodePort/' \
   | kubectl apply --filename -
 
@@ -68,8 +68,8 @@ sleep 5; while echo && kubectl get pods -n knative-serving | grep -v -E "(Runnin
 
 
 header_text "Setting up Knative Eventing"
-kubectl apply --filename https://github.com/knative/eventing/releases/download/${eventing_version}/release.yaml
-kubectl apply --filename https://github.com/knative/eventing-sources/releases/download/${eventing_sources_version}/eventing-sources.yaml
+kubectl apply --filename https://raw.githubusercontent.com/openshift-knative/knative-eventing-operator/master/deploy/resources/knative-eventing-${eventing_sources_version}.yaml
+kubectl apply --filename https://raw.githubusercontent.com/openshift-knative/knative-eventing-operator/master/deploy/resources/knative-eventing-sources-${eventing_sources_version}.yaml
 
 header_text "Waiting for Knative Eventing to become ready"
 sleep 5; while echo && kubectl get pods -n knative-eventing | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
