@@ -21,6 +21,11 @@ eventing_version="0.4.1"
 eventing_sources_version="0.4.1"
 istio_version="v0.4.0"
 
+MEMORY="$(minikube config view | awk '/memory/ { print $3 }')"
+CPUS="$(minikube config view | awk '/cpus/ { print $3 }')"
+DISKSIZE="$(minikube config view | awk '/disk-size/ { print $3 }')"
+DRIVER="$(minikube config view | awk '/vm-driver/ { print $3 }')"
+
 function header_text {
   echo "$header$*$reset"
 }
@@ -32,7 +37,7 @@ header_text "Using Knative Eventing Version:         ${eventing_version}"
 header_text "Using Knative Eventing Sources Version: ${eventing_sources_version}"
 header_text "Using Istio Version:                    ${istio_version}"
 
-minikube start --memory=12288 --cpus=4 --kubernetes-version=v1.12.1 --vm-driver=kvm2 --disk-size=30g --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
+minikube start --memory="${MEMORY:-12288}" --cpus="${CPUS:-4}" --kubernetes-version=v1.12.1 --vm-driver="${DRIVER:-kvm2}" --disk-size="${DISKSIZE:-30g}" --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
 
 header_text "Strimzi install"
 kubectl create namespace kafka
