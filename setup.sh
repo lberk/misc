@@ -39,17 +39,18 @@ header_text "Using Knative Eventing Version:         ${eventing_version}"
 header_text "Using Knative Eventing Sources Version: ${eventing_sources_version}"
 header_text "Using Istio Version:                    ${istio_version}"
 
-minikube start --memory="${MEMORY:-12288}" --cpus="${CPUS:-4}" --kubernetes-version=${kube_version} --vm-driver="${DRIVER:-kvm2}" --disk-size="${DISKSIZE:-30g}" --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
+minikube start --memory="${MEMORY:-12288}" --cpus="${CPUS:-4}" --kubernetes-version="${kube_version}" --vm-driver="${DRIVER:-kvm2}" --disk-size="${DISKSIZE:-30g}" --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
+header_text "Waiting for core k8s services to initialize"
+sleep 5; while echo && kubectl get pods -n kube-system | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
 
 header_text "Strimzi install"
 kubectl create namespace kafka
-curl -L https://github.com/strimzi/strimzi-kafka-operator/releases/download/${strimzi_version}/strimzi-cluster-operator-${strimzi_version}.yaml \
+curl -L "https://github.com/strimzi/strimzi-kafka-operator/releases/download/${strimzi_version}/strimzi-cluster-operator-${strimzi_version}.yaml" \
   | sed 's/namespace: .*/namespace: kafka/' \
   | kubectl -n kafka apply -f -
 
 header_text "Applying Strimzi Cluster file"
 kubectl -n kafka apply -f "https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/${strimzi_version}/examples/kafka/kafka-persistent-single.yaml"
-#kubectl apply -f https://gist.githubusercontent.com/matzew/fdd95efc2050edd3ea6e76b56e8f50e3/raw/ec40730f476c1c98a30818931f6233f8c1941c59/exposed-kafka.yaml -n kafka
 header_text "Waiting for Strimzi to become ready"
 sleep 5; while echo && kubectl get pods -n kafka | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
 
