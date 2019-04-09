@@ -46,7 +46,7 @@ curl -L https://github.com/strimzi/strimzi-kafka-operator/releases/download/${st
   | kubectl -n kafka apply -f -
 
 header_text "Applying Strimzi Cluster file"
-kubectl -n kafka apply -f "https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/${strimzi_version}/examples/kafka/kafka-persistent.yaml"
+kubectl -n kafka apply -f "https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/${strimzi_version}/examples/kafka/kafka-persistent-single.yaml"
 #kubectl apply -f https://gist.githubusercontent.com/matzew/fdd95efc2050edd3ea6e76b56e8f50e3/raw/ec40730f476c1c98a30818931f6233f8c1941c59/exposed-kafka.yaml -n kafka
 header_text "Waiting for Strimzi to become ready"
 sleep 5; while echo && kubectl get pods -n kafka | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
