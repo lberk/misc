@@ -57,7 +57,6 @@ curl -L "https://raw.githubusercontent.com/knative/serving/${serving_version}/th
     | sed 's/LoadBalancer/NodePort/' \
     | kubectl apply --filename -
 
-
 # Label the default namespace with istio-injection=enabled.
 header_text "Labeling default namespace w/ istio-injection=enabled"
 kubectl label namespace default istio-injection=enabled
