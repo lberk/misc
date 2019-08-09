@@ -73,7 +73,8 @@ sleep 5; while echo && kubectl get pods -n knative-serving | grep -v -E "(Runnin
 
 
 header_text "Setting up Knative Eventing"
-kubectl apply --filename https://github.com/knative/eventing/releases/download/${eventing_version}/release.yaml
+#kubectl apply --filename https://github.com/knative/eventing/releases/download/${eventing_version}/release.yaml
+kubectl apply --filename https://storage.googleapis.com/knative-nightly/eventing/latest/release.yaml
 
 header_text "Waiting for Knative Eventing to become ready"
 sleep 5; while echo && kubectl get pods -n knative-eventing | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
