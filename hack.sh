@@ -18,8 +18,8 @@ fi
 strimzi_version=`curl https://github.com/strimzi/strimzi-kafka-operator/releases/latest |  awk -F 'tag/' '{print $2}' | awk -F '"' '{print $1}' 2>/dev/null`
 serving_version="v0.8.0"
 eventing_version="v0.8.0"
-istio_version="1.2.0"
-kube_version="v1.12.1"
+istio_version="1.1.7"
+kube_version="v1.13.4"
 
 MEMORY="$(minikube config view | awk '/memory/ { print $3 }')"
 CPUS="$(minikube config view | awk '/cpus/ { print $3 }')"
@@ -52,10 +52,16 @@ header_text "Using Istio Version:                    ${istio_version}"
 # header_text "Waiting for Strimzi to become ready"
 # sleep 5; while echo && kubectl get pods -n kafka | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
 
-# header_text "Setting up Istio lean"
-# curl -L "https://gist.githubusercontent.com/matzew/8772d5095a93b04d1de6f07319db4ba9/raw/afd20d5b342cb2f7ddccb532ea0f19f431bebe79/matzew-istio-lean.yaml" \
-#     | sed 's/LoadBalancer/NodePort/' \
-#     | kubectl apply --filename -
+header_text "Setting up Istio lean"
+# kubectl apply --filename "https://raw.githubusercontent.com/knative/serving/${serving_version}/third_party/istio-${istio_version}/istio-crds.yaml" &&
+#     curl -L "https://raw.githubusercontent.com/knative/serving/${serving_version}/third_party/istio-${istio_version}/istio.yaml" \
+#         | sed 's/LoadBalancer/NodePort/' \
+#         | kubectl apply --filename -
+
+curl -L "https://raw.githubusercontent.com/knative/serving/${serving_version}/third_party/istio-${istio_version}/istio-lean.yaml" \
+    | sed 's/LoadBalancer/NodePort/' \
+    | kubectl apply --filename -
+
 
 # # Label the default namespace with istio-injection=enabled.
 # header_text "Labeling default namespace w/ istio-injection=enabled"
