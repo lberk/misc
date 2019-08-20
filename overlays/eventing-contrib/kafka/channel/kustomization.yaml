@@ -1,0 +1,55 @@
+# To regenerate the resources run; kustomize edit add resource config/*.yaml
+resources:
+- config/200-addressable-resolver-clusterrole.yaml
+- config/200-channelable-manipulator-clusterrole.yaml
+- config/200-controller-clusterrole.yaml
+- config/200-dispatcher-clusterrole.yaml
+- config/200-webhook-clusterrole.yaml
+- config/400-kafka-config.yaml
+- config/200-dispatcher-service.yaml
+- config/200-serviceaccount.yaml
+- config/201-clusterrolebinding.yaml
+- config/300-kafka-channel.yaml
+- config/400-webhook-service.yaml
+- config/500-controller.yaml
+- config/500-dispatcher.yaml
+- config/500-webhook.yaml
+patchesJson6902:
+- path: overlays/openshift-privs.yaml
+  target:
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: kafka-addressable-resolver
+    version: v1
+- path: overlays/openshift-privs.yaml
+  target:
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: kafka-channelable-manipulator
+    version: v1
+- path: overlays/openshift-privs.yaml
+  target:
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: kafka-ch-controller
+    version: v1
+- path: overlays/openshift-privs.yaml
+  target:
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: kafka-ch-dispatcher
+    version: v1
+- path: overlays/openshift-privs.yaml
+  target:
+    group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: kafka-webhook
+    version: v1
+- path: overlays/kafkabootstrapserver.yaml
+  target:
+    kind: ConfigMap
+    name: config-kafka
+    namespace: knative-eventing
+    version: v1
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

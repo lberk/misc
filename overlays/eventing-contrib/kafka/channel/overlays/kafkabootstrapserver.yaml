@@ -1,0 +1,4 @@
+- op: replace
+  path: /data
+  value:
+    bootstrapServers: my-cluster-kafka-bootstrap.kafka:9092
