@@ -9,7 +9,7 @@ ocp_ensure_env()
     OS_BIN=${OS_BIN:-"bin/openshift-install"}
 
 }
-ocp_start()
+ocp_start() 
 {
     ocp_ensure_env
     cd "$INSTALLER_DIR" || return 1
