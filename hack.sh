@@ -20,7 +20,7 @@ function mk_setup_env() {
 strimzi_version=`curl https://github.com/strimzi/strimzi-kafka-operator/releases/latest |  awk -F 'tag/' '{print $2}' | awk -F '"' '{print $1}' 2>/dev/null`
 serving_version="v0.10.0"
 eventing_version="v0.10.0"
-ISTIO_VERSION="1.4.0"
+ISTIO_VERSION="1.1.7"
 kube_version="v1.14.0"
 
 MEMORY="$(minikube config view | awk '/memory/ { print $3 }')"
@@ -85,7 +85,7 @@ function istio_with_sidecar() {
 
 function setup_istio() {
     pushd
-    ISTIO_VERSION=1.4.0
+    export ISTIO_VERSION=1.1.7
     ISTIO_DIR=`mktemp -d istioXXX -p /tmp/`; cd $ISTIO_DIR
     header_text "Setting up Istio from ${ISTIO_DIR}"
     curl -L https://git.io/getLatestIstio | sh -
