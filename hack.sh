@@ -18,8 +18,8 @@ fi
 function mk_setup_env() {
 
 strimzi_version=`curl https://github.com/strimzi/strimzi-kafka-operator/releases/latest |  awk -F 'tag/' '{print $2}' | awk -F '"' '{print $1}' 2>/dev/null`
-serving_version="v0.11.0"
-eventing_version="v0.11.0"
+serving_version="v0.12.0"
+eventing_version="v0.12.0"
 ISTIO_VERSION="1.1.7"
 kube_version="v1.16.0"
 
