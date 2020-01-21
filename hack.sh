@@ -18,10 +18,10 @@ fi
 function mk_setup_env() {
 
 strimzi_version=`curl https://github.com/strimzi/strimzi-kafka-operator/releases/latest |  awk -F 'tag/' '{print $2}' | awk -F '"' '{print $1}' 2>/dev/null`
-serving_version="v0.10.0"
-eventing_version="v0.10.0"
+serving_version="v0.11.0"
+eventing_version="v0.11.0"
 ISTIO_VERSION="1.1.7"
-kube_version="v1.14.0"
+kube_version="v1.16.0"
 
 MEMORY="$(minikube config view | awk '/memory/ { print $3 }')"
 CPUS="$(minikube config view | awk '/cpus/ { print $3 }')"
@@ -136,6 +136,32 @@ function install_strimzi() {
     sleep 5; while echo && kubectl get pods -n kafka | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
 
 }
+
+function setup_bundled_istio(){
+    mk_setup_env
+    curl -L "https://raw.githubusercontent.com/knative/serving/${serving_version}/third_party/istio-1.4.0/istio-lean.yaml" \
+        | sed 's/LoadBalancer/NodePort/' \
+        | kubectl apply -f -
+    kubectl label namespace default istio-injection=enabled
+    sleep 20; while echo && kubectl get pods -n istio-system | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
+
+}
+function resource_wait() {
+    if [ ! -z "$1" ]; then
+        _namespace="-n ${1}"
+    else
+        _namespace="-A"
+    fi
+    _sleeptime=${2:-5}
+    sleep "${_sleeptime}"; while echo && kubectl get pods "${_namespace}" | grep -v -E "(Running|Completed|STATUS)"; do sleep "${_sleeptime}"; done
+}
+
+function install_upstream_eventing() {
+    header_text "Setting up Knative Eventing ${eventing_version}"
+    kubectl apply --filename "https://github.com/knative/eventing/releases/download/${eventing_version}/release.yaml"
+    header_text "Waiting for Knative Eventing to become ready"
+    sleep 5; while echo && kubectl get pods -n knative-eventing | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
+}
 function mk_stop() {
     minikube delete
 }
@@ -149,24 +175,26 @@ function mk_start() {
     header_text "Using Knative Eventing Version:         ${eventing_version}"
     header_text "Using Istio Version:                    ${ISTIO_VERSION}"
 
-    minikube start --memory="${MEMORY:-16384}" --cpus="${CPUS:-6}" --kubernetes-version="${kube_version}" --vm-driver="${DRIVER:-kvm2}" --disk-size="${DISKSIZE:-30g}" --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
-    header_text "Waiting for core k8s services to initialize"
-    sleep 5; while echo && kubectl get pods -n kube-system | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
+    minikube start --memory="${MEMORY:-16384}" \
+             --cpus="${CPUS:-8}" \
+             --kubernetes-version="${kube_version}" \
+             --vm-driver="${DRIVER:-kvm2}" \
+             --disk-size="${DISKSIZE:-30g}" \
+             --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
 
+    header_text "Waiting for core k8s services to initialize"
     sleep 5; while echo && kubectl get pods -n kube-system | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
 
     install_strimzi
 
-    setup_istio
-
+    #    setup_istio
+    setup_bundled_istio
+    
     install_upstream_serving
 
+    install_upstream_eventing
 }
 
-#header_text "Setting up Knative Eventing"
-#kubectl apply --filename https://github.com/knative/eventing/releases/download/${eventing_version}/release.yaml
-#kubectl apply --filename https://storage.googleapis.com/knative-nightly/eventing/latest/release.yaml
 
-#header_text "Waiting for Knative Eventing to become ready"
-#sleep 5; while echo && kubectl get pods -n knative-eventing | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
+
 
