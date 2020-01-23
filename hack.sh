@@ -20,7 +20,7 @@ function mk_setup_env() {
 strimzi_version=`curl https://github.com/strimzi/strimzi-kafka-operator/releases/latest |  awk -F 'tag/' '{print $2}' | awk -F '"' '{print $1}' 2>/dev/null`
 serving_version="v0.12.0"
 eventing_version="v0.12.0"
-ISTIO_VERSION="1.1.7"
+ISTIO_VERSION="1.3.6"
 kube_version="v1.16.0"
 
 MEMORY="$(minikube config view | awk '/memory/ { print $3 }')"
@@ -85,7 +85,7 @@ function istio_with_sidecar() {
 
 function setup_istio() {
     pushd
-    export ISTIO_VERSION=1.1.7
+    export ISTIO_VERSION=1.3.6
     ISTIO_DIR=`mktemp -d istioXXX -p /tmp/`; cd $ISTIO_DIR
     header_text "Setting up Istio from ${ISTIO_DIR}"
     curl -L https://git.io/getLatestIstio | sh -
@@ -158,7 +158,7 @@ function resource_wait() {
 
 function install_upstream_eventing() {
     header_text "Setting up Knative Eventing ${eventing_version}"
-    kubectl apply --filename "https://github.com/knative/eventing/releases/download/${eventing_version}/release.yaml"
+    kubectl apply --filename "https://github.com/knative/eventing/releases/download/${eventing_version}/eventing.yaml"
     header_text "Waiting for Knative Eventing to become ready"
     sleep 5; while echo && kubectl get pods -n knative-eventing | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
 }
