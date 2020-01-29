@@ -54,6 +54,7 @@ function istio_without_sidecar() {
          --set gateways.istio-ingressgateway.autoscaleMin=1 \
          --set gateways.istio-ingressgateway.autoscaleMax=2 \
          --set pilot.traceSampling=100 \
+         --set global.mtls.auto=false \
          install/kubernetes/helm/istio \
          > ./istio-lean.yaml
 
@@ -75,13 +76,35 @@ function istio_with_sidecar() {
          --set gateways.istio-ingressgateway.autoscaleMax=2 \
          --set gateways.istio-ingressgateway.resources.requests.cpu=500m \
          --set gateways.istio-ingressgateway.resources.requests.memory=256Mi \
+         --set gateways.istio-ingressgateway.sds.enabled=true \
          --set pilot.autoscaleMin=2 \
          --set pilot.traceSampling=100 \
          install/kubernetes/helm/istio \
          > ./istio.yaml
 
     kubectl apply -f istio.yaml
- }
+}
+
+function istio_local_gateway() {
+    header_text "Setting up cluster local gateway"
+    helm template --namespace=istio-system \
+         --set gateways.custom-gateway.autoscaleMin=1 \
+         --set gateways.custom-gateway.autoscaleMax=2 \
+         --set gateways.custom-gateway.cpu.targetAverageUtilization=60 \
+         --set gateways.custom-gateway.labels.app='cluster-local-gateway' \
+         --set gateways.custom-gateway.labels.istio='cluster-local-gateway' \
+         --set gateways.custom-gateway.type='ClusterIP' \
+         --set gateways.istio-ingressgateway.enabled=false \
+         --set gateways.istio-egressgateway.enabled=false \
+         --set gateways.istio-ilbgateway.enabled=false \
+         --set global.mtls.auto=false \
+         install/kubernetes/helm/istio \
+         -f install/kubernetes/helm/istio/example-values/values-istio-gateways.yaml \
+        | sed -e "s/custom-gateway/cluster-local-gateway/g" -e "s/customgateway/clusterlocalgateway/g" \
+              > ./istio-local-gateway.yaml
+
+    kubectl apply -f istio-local-gateway.yaml
+}
 
 function setup_istio() {
     pushd
@@ -91,10 +114,13 @@ function setup_istio() {
     curl -L https://git.io/getLatestIstio | sh -
     cd istio-${ISTIO_VERSION}
 
-    for i in install/kubernetes/helm/istio-init/files/crd*yaml; do
-        kubectl apply -f ${i};
+    for i in install/kubernetes/helm/istio-init/files/crd*yaml
+    do
+        header_text "Applying: $i"
+        kubectl apply -f $i;
     done
-    sleep 5
+
+    sleep 15
     cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Namespace
@@ -103,8 +129,10 @@ metadata:
  labels:
    istio-injection: disabled
 EOF
+    sleep 5
     while echo && kubectl get pods -n istio-system | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
     istio_with_sidecar
+    istio_local_gateway
 
     # Label the default namespace with istio-injection=enabled.
     header_text "Labeling default namespace w/ istio-injection=enabled"
@@ -187,8 +215,8 @@ function mk_start() {
 
     install_strimzi
 
-    #    setup_istio
-    setup_bundled_istio
+    setup_istio
+    #setup_bundled_istio
     
     install_upstream_serving
 
