@@ -22,6 +22,7 @@ serving_version="v0.12.0"
 eventing_version="v0.12.0"
 ISTIO_VERSION="1.3.6"
 kube_version="v1.16.0"
+kourier_version="v0.3.8"
 
 MEMORY="$(minikube config view | awk '/memory/ { print $3 }')"
 CPUS="$(minikube config view | awk '/cpus/ { print $3 }')"
@@ -131,7 +132,7 @@ metadata:
 EOF
     sleep 5
     while echo && kubectl get pods -n istio-system | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
-    istio_with_sidecar
+    istio_without_sidecar
     istio_local_gateway
 
     # Label the default namespace with istio-injection=enabled.
@@ -190,6 +191,20 @@ function install_upstream_eventing() {
     header_text "Waiting for Knative Eventing to become ready"
     sleep 5; while echo && kubectl get pods -n knative-eventing | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
 }
+
+function setup_kourier() {
+    header_text "Setting up Kourier"
+    kubectl apply -f "https://raw.githubusercontent.com/3scale/kourier/${kourier_version}/deploy/kourier-knative.yaml"
+
+    header_text "Waiting for Kourier to become ready"
+    sleep 5; while echo && kubectl get pods -n kourier-system | grep -v -E "(Running|Completed|STATUS)"; do sleep 5; done
+    kubectl patch configmap/config-network \
+            -n knative-serving \
+            --type merge \
+            -p '{"data":{"clusteringress.class":"kourier.ingress.networking.knative.dev",
+                           "ingress.class":"kourier.ingress.networking.knative.dev"}}'
+}
+
 function mk_stop() {
     minikube delete
 }
@@ -202,6 +217,8 @@ function mk_start() {
     header_text "Using Knative Serving Version:          ${serving_version}"
     header_text "Using Knative Eventing Version:         ${eventing_version}"
     header_text "Using Istio Version:                    ${ISTIO_VERSION}"
+    header_text "Using Kourier Version:                  ${kourier_version}"
+
 
     minikube start --memory="${MEMORY:-16384}" \
              --cpus="${CPUS:-8}" \
@@ -215,10 +232,12 @@ function mk_start() {
 
     install_strimzi
 
-    setup_istio
+    #setup_istio
     #setup_bundled_istio
     
     install_upstream_serving
+
+    setup_kourier
 
     install_upstream_eventing
 }
